@@ -162,41 +162,46 @@ if menu == "Absensi Siswa":
 
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-        st.markdown("#### 🔍 Cari Identitas Siswa")
-        st.caption("Ketik huruf atau nama/NISN. Daftar di bawah akan otomatis menyusut semakin spesifik:")
+        st.markdown("#### 🔍 Cari & Pilih Identitas Siswa")
+        st.caption("Ketik beberapa huruf nama atau NISN, lalu klik nama yang sesuai pada daftar pilihan:")
         
-        # Kolom input teks untuk pencarian real-time
-        keyword = st.text_input("Ketik Nama atau NISN:", placeholder="Contoh: Ah atau 005...").strip()
+        # 1. Kotak untuk mengetik kata kunci filter
+        search_keyword = st.text_input("Ketik untuk memfilter nama/NISN:", placeholder="Contoh: Muhammad atau 005...").strip()
         
-        selected_nisn = None
-        if keyword:
-            # Filter data secara dinamis berdasarkan huruf yang diketik
+        # 2. Saring data berdasarkan ketikan
+        if search_keyword:
             df_filtered = df_siswa[
-                df_siswa['nama'].str.contains(keyword, case=False, na=False) | 
-                df_siswa['nisn'].astype(str).str.contains(keyword, case=False, na=False)
+                df_siswa['nama'].str.contains(search_keyword, case=False, na=False) | 
+                df_siswa['nisn'].astype(str).str.contains(search_keyword, case=False, na=False)
             ]
+        else:
+            df_filtered = df_siswa.head(50) # Batasi tampilkan awal agar tidak terlalu berat jika kosong
             
-            if not df_filtered.empty:
-                st.info(f"Ditemukan {len(df_filtered)} siswa yang cocok. Silakan salin NISN atau pilih dari daftar:")
-                
-                # Menampilkan tabel hasil saringan secara interaktif
-                st.dataframe(
-                    df_filtered.rename(columns={"nisn": "NISN", "nama": "Nama Lengkap", "kelas": "Kelas"}),
-                    hide_index=True,
-                    use_container_width=True
-                )
-                
-                # Input lanjutan untuk memasukkan NISN yang spesifik dari hasil saringan
-                selected_nisn = st.text_input("Masukkan NISN secara lengkap dari tabel di atas untuk melanjutkan:", placeholder="Ketik NISN di sini...")
-                selected_nisn = selected_nisn.strip()
-            else:
-                st.warning("⚠️ Tidak ada siswa yang cocok dengan kata kunci tersebut.")
+        if not df_filtered.empty:
+            # Buat kamus pilihan untuk selectbox
+            options_dict = {
+                f"{row['nama']} — Kelas: {row['kelas']} (NISN: {row['nisn']})": str(row['nisn']) 
+                for _, row in df_filtered.iterrows()
+            }
+            
+            # 3. Kotak pilihan (selectbox) di mana pengguna bisa langsung mengklik nama yang diinginkan
+            pilihan_terpilih = st.selectbox(
+                f"Ditemukan {len(df_filtered)} data. Pilih nama siswa di bawah:",
+                options=list(options_dict.keys()),
+                index=None,
+                placeholder="--- Klik dan pilih nama siswa ---"
+            )
+            
+            selected_nisn = options_dict[pilihan_terpilih] if pilihan_terpilih else None
+        else:
+            st.warning("⚠️ Tidak ada siswa yang cocok dengan kata kunci tersebut.")
+            selected_nisn = None
+            
         st.markdown("</div>", unsafe_allow_html=True)
 
     device_id = "user_device_browser_session"
 
     if selected_nisn:
-        # Cek apakah NISN yang dimasukkan valid ada di database
         matched_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn]
         
         if not matched_row.empty:
@@ -323,9 +328,8 @@ if menu == "Absensi Siswa":
                                 st.error("🚨 Melewati batas pukul 15.15 WIB! Tercatat: **MINGGAT**.")
                                 st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
-        elif selected_nisn != "":
-            st.error("⚠️ NISN yang dimasukkan tidak valid atau tidak ditemukan dari daftar di atas.")
 
+                
 # ==========================================
 # HALAMAN 2: MONITORING WAKASEK KURIKULUM
 # ==========================================
