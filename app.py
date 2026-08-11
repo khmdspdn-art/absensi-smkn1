@@ -163,22 +163,28 @@ if menu == "Absensi Siswa":
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
         st.markdown("#### 🔍 Cari Identitas Siswa")
-        options = df_siswa.apply(lambda x: f"{x['nama']} (NISN: {x['nisn']} - {x['kelas']})", axis=1)
+        st.caption("Ketik Nama atau NISN pada kolom di bawah untuk mencari secara cepat (Autocomplete):")
+        
+        # Membuat format opsi pencarian yang rapi
+        df_siswa['label_cari'] = df_siswa['nama'] + " — NISN: " + df_siswa['nisn'].astype(str) + " — Kelas: " + df_siswa['kelas']
+        options_list = df_siswa['label_cari'].tolist()
 
+        # st.selectbox bawaan Streamlit sudah memiliki fitur autocomplete (bisa diketik untuk memfilter)
         selected_option = st.selectbox(
-            "Ketik nama lengkap atau NISN Anda:",
-            options=options,
+            "Cari berdasarkan Nama atau NISN:",
+            options=options_list,
             index=None,
-            placeholder="Mulai ketik nama Anda..."
+            placeholder="Ketik nama atau NISN siswa di sini..."
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
     device_id = "user_device_browser_session"
 
     if selected_option:
-        selected_nisn = selected_option.split('NISN: ')[1].split(' - ')[0]
-        user_row = df_siswa[df_siswa['nisn'] == selected_nisn].iloc[0]
-        nisn = user_row['nisn']
+        # Mengambil NISN dari string yang dipilih
+        selected_nisn = selected_option.split('— NISN: ')[1].split(' — ')[0].strip()
+        user_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn].iloc[0]
+        nisn = str(user_row['nisn'])
         nama = user_row['nama']
         kelas = user_row['kelas']
 
