@@ -168,14 +168,15 @@ if menu == "Absensi Siswa":
         # 1. Kotak untuk mengetik kata kunci filter
         search_keyword = st.text_input("Ketik untuk memfilter nama/NISN:", placeholder="Contoh: Muhammad atau 005...").strip()
         
-        # 2. Saring data berdasarkan ketikan
+        # 2. Saring data berdasarkan ketikan atau tampilkan default awal
         if search_keyword:
             df_filtered = df_siswa[
                 df_siswa['nama'].str.contains(search_keyword, case=False, na=False) | 
                 df_siswa['nisn'].astype(str).str.contains(search_keyword, case=False, na=False)
             ]
         else:
-            df_filtered = df_siswa.head(50) # Batasi tampilkan awal agar tidak terlalu berat jika kosong
+            df_filtered = df_siswa.head(50) # Tampilkan 50 data awal agar selectbox tidak kosong
+            st.caption("💡 *Menampilkan 50 data awal. Ketik nama atau NISN di atas untuk pencarian spesifik.*")
             
         if not df_filtered.empty:
             # Buat kamus pilihan untuk selectbox
@@ -186,7 +187,7 @@ if menu == "Absensi Siswa":
             
             # 3. Kotak pilihan (selectbox) di mana pengguna bisa langsung mengklik nama yang diinginkan
             pilihan_terpilih = st.selectbox(
-                f"Ditemukan {len(df_filtered)} data. Pilih nama siswa di bawah:",
+                f"Pilih nama siswa (Menampilkan {len(df_filtered)} pilihan):",
                 options=list(options_dict.keys()),
                 index=None,
                 placeholder="--- Klik dan pilih nama siswa ---"
@@ -329,7 +330,6 @@ if menu == "Absensi Siswa":
                                 st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                
 # ==========================================
 # HALAMAN 2: MONITORING WAKASEK KURIKULUM
 # ==========================================
