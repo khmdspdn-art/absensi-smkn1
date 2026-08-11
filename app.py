@@ -1,4 +1,5 @@
 from datetime import datetime
+import base64
 import sqlite3
 import pandas as pd
 import streamlit as st
@@ -16,20 +17,30 @@ LAT_SEKOLAH = -6.877500
 LON_SEKOLAH = 108.285000
 RADIUS_MAX = 50  # dalam meter
 
-# --- CUSTOM CSS DENGAN EFEK GRADASI PREMIUM ---
+# --- FUNGSI LOAD GAMBAR LOGO KE BASE64 ---
+def get_img_as_base64(file_path):
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception:
+        return None
+
+# Ubah "logo.png" sesuai dengan nama file gambar logo Anda di folder proyek
+img_base64 = get_img_as_base64("logo.png")
+
+# --- CUSTOM CSS DENGAN EFEK GRADASI & STYLE GAMBAR LOGO ---
 st.markdown(
-    """
+    f"""
     <style>
-    /* Global Background & Font */
-    .main {
+    .main {{
         background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
         font-family: 'Inter', sans-serif;
     }
     
-    /* Header dengan Gradasi Warna Elegan */
-    .header-container {
+    .header-container {{
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1d4ed8 100%);
-        padding: 2.8rem 2rem;
+        padding: 2.5rem 2rem;
         border-radius: 18px;
         color: white;
         text-align: center;
@@ -37,26 +48,30 @@ st.markdown(
         box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .header-logo {
-        font-size: 3.5rem;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    
+    .school-logo {{
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        margin-bottom: 1rem;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
     }
-    .header-title {
-        font-size: 2.3rem;
+
+    .header-title {{
+        font-size: 2.2rem;
         font-weight: 800;
         margin-bottom: 0.4rem;
         letter-spacing: -0.5px;
     }
-    .header-subtitle {
+    
+    .header-subtitle {{
         font-size: 1.1rem;
         color: #e2e8f0;
         font-weight: 400;
         letter-spacing: 0.5px;
     }
 
-    /* Card Box Modern dengan Efek Bayangan Lembut */
-    .custom-card {
+    .custom-card {{
         background: rgba(255, 255, 255, 0.95);
         padding: 1.8rem;
         border-radius: 14px;
@@ -66,8 +81,7 @@ st.markdown(
         backdrop-filter: blur(10px);
     }
 
-    /* Tombol Utama dengan Gradasi */
-    .stButton>button {
+    .stButton>button {{
         width: 100%;
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
@@ -78,30 +92,28 @@ st.markdown(
         box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         transition: all 0.3s ease;
     }
-    .stButton>button:hover {
+    .stButton>button:hover {{
         background: linear-gradient(135deg, #1d4ed8 100%, #1e40af 100%);
         box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         transform: translateY(-2px);
     }
 
-    /* Sidebar dengan Nuansa Profesional */
-    section[data-testid="stSidebar"] {
+    section[data-testid="stSidebar"] {{
         background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
         color: white;
     }
-    section[data-testid="stSidebar"] .stRadio label {
+    section[data-testid="stSidebar"] .stRadio label {{
         color: #f1f5f9 !important;
         font-weight: 500;
-    }
+    }}
     
-    /* Metrik Dashboard */
-    div[data-testid="stMetric"] {
+    div[data-testid="stMetric"] {{
         background: white;
         padding: 1.2rem;
         border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         border: 1px solid #e2e8f0;
-    }
+    }}
     </style>
 """,
     unsafe_allow_html=True,
@@ -124,13 +136,16 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>SMKN 1 Lemahsugih<br>Digital Geofencing System © 2026</p>", unsafe_allow_html=True)
 
+# HTML Tag untuk Logo Sekolah di Header
+logo_html = f"<img src='data:image/png;base64,{img_base64}' class='school-logo'>" if img_base64 else "<div style='font-size: 3rem;'>🎓</div>"
+
 # ==========================================
 # HALAMAN 1: ABSENSI SISWA
 # ==========================================
 if menu == "Absensi Siswa":
-    st.markdown("""
+    st.markdown(f"""
         <div class='header-container'>
-            <div class='header-logo'>🏛️</div>
+            {logo_html}
             <div class='header-title'>SMKN 1 LEMAHSUGIH</div>
             <div class='header-subtitle'>Portal Resmi Absensi & Geofencing Siswa Berbasis Digital</div>
         </div>
@@ -208,7 +223,6 @@ if menu == "Absensi Siswa":
 
         col_masuk, col_pulang = st.columns(2)
 
-        # --- ABSEN MASUK ---
         with col_masuk:
             st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
             st.markdown("#### 📥 Absen Masuk")
@@ -250,7 +264,6 @@ if menu == "Absensi Siswa":
                             st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- ABSEN PULANG ---
         with col_pulang:
             st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
             st.markdown("#### 📤 Absen Pulang")
@@ -292,9 +305,9 @@ if menu == "Absensi Siswa":
 # HALAMAN 2: MONITORING WAKASEK KURIKULUM
 # ==========================================
 elif menu == "Monitoring Wakasek Kurikulum":
-    st.markdown("""
+    st.markdown(f"""
         <div class='header-container'>
-            <div class='header-logo'>📊</div>
+            {logo_html}
             <div class='header-title'>DASHBOARD WAKASEK KURIKULUM</div>
             <div class='header-subtitle'>Monitoring Kehadiran Siswa Real-Time • SMKN 1 Lemahsugih</div>
         </div>
@@ -347,7 +360,6 @@ elif menu == "Monitoring Wakasek Kurikulum":
             if pilih_kelas != "Semua Kelas":
                 filtered_df = filtered_df[filtered_df["kelas"] == pilih_kelas]
 
-            # Metrik Ringkasan Eksekutif
             m1, m2, m3, m4 = st.columns(4)
             total_absen = len(filtered_df)
             tepat_waktu = len(filtered_df[filtered_df["status_masuk"] == "TEPAT WAKTU"])
@@ -363,7 +375,6 @@ elif menu == "Monitoring Wakasek Kurikulum":
             st.markdown("#### 📋 Rincian Tabel Kehadiran")
             st.dataframe(filtered_df, use_container_width=True)
 
-            # Tombol Download Laporan Profesional
             csv_data = filtered_df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="📥 Download Laporan Rekap (Format CSV / Excel)",
