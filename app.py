@@ -163,26 +163,38 @@ if menu == "Absensi Siswa":
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
         st.markdown("#### 🔍 Cari Identitas Siswa")
-        st.caption("Ketik Nama atau NISN pada kolom di bawah untuk mencari secara cepat (Autocomplete):")
+        st.caption("Ketik Nama atau NISN pada kolom di bawah untuk mencari:")
         
-        # Membuat format opsi pencarian yang rapi
-        df_siswa['label_cari'] = df_siswa['nama'] + " — NISN: " + df_siswa['nisn'].astype(str) + " — Kelas: " + df_siswa['kelas']
-        options_list = df_siswa['label_cari'].tolist()
-
-        # st.selectbox bawaan Streamlit sudah memiliki fitur autocomplete (bisa diketik untuk memfilter)
-        selected_option = st.selectbox(
-            "Cari berdasarkan Nama atau NISN:",
-            options=options_list,
-            index=None,
-            placeholder="Ketik nama atau NISN siswa di sini..."
-        )
+        # Menggunakan text_input agar bisa diketik bebas oleh pengguna
+        keyword = st.text_input("Masukkan Nama atau NISN:", placeholder="Contoh: Ahmad atau 005...").strip()
+        
+        selected_nisn = None
+        if keyword:
+            # Filter data berdasarkan nama atau NISN yang diketik
+            df_filtered = df_siswa[
+                df_siswa['nama'].str.contains(keyword, case=False, na=False) | 
+                df_siswa['nisn'].astype(str).str.contains(keyword, case=False, na=False)
+            ]
+            
+            if len(df_filtered) == 1:
+                # Jika hasil pencarian hanya 1, otomatis dipilih
+                user_row = df_filtered.iloc[0]
+                selected_nisn = str(user_row['nisn'])
+                st.success( ditemukan: **{user_row['nama']}** (Kelas: {user_row['kelas']})")
+            elif len(df_filtered) > 1:
+                # Jika ada beberapa nama yang mirip, tampilkan pilihan spesifik
+                st.info(f"Ditemukan {len(df_filtered)} siswa dengan kata kunci tersebut. Silakan pilih di bawah:")
+                options_map = {f"{row['nama']} — NISN: {row['nisn']} — Kelas: {row['kelas']}": str(row['nisn']) for _, row in df_filtered.iterrows()}
+                pilihan_nama = st.selectbox("Pilih Nama Siswa:", options=list(options_map.keys()), index=None)
+                if pilihan_nama:
+                    selected_nisn = options_map[pilihan_nama]
+            else:
+                st.warning("⚠️ Siswa dengan nama atau NISN tersebut tidak ditemukan.")
         st.markdown("</div>", unsafe_allow_html=True)
 
     device_id = "user_device_browser_session"
 
-    if selected_option:
-        # Mengambil NISN dari string yang dipilih
-        selected_nisn = selected_option.split('— NISN: ')[1].split(' — ')[0].strip()
+    if selected_nisn:
         user_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn].iloc[0]
         nisn = str(user_row['nisn'])
         nama = user_row['nama']
