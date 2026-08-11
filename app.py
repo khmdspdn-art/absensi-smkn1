@@ -26,7 +26,6 @@ def get_img_as_base64(file_path):
     except Exception:
         return None
 
-# Ubah "logo.png" sesuai dengan nama file gambar logo Anda di folder proyek
 img_base64 = get_img_as_base64("logo.png")
 
 # --- CUSTOM CSS DENGAN EFEK GRADASI & STYLE GAMBAR LOGO ---
@@ -136,7 +135,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>SMKN 1 Lemahsugih<br>Digital Geofencing System © 2026</p>", unsafe_allow_html=True)
 
-# HTML Tag untuk Logo Sekolah di Header
 logo_html = f"<img src='data:image/png;base64,{img_base64}' class='school-logo'>" if img_base64 else "<div style='font-size: 3rem;'>🎓</div>"
 
 # ==========================================
@@ -154,59 +152,57 @@ if menu == "Absensi Siswa":
     if "device_lock" not in st.session_state:
         st.session_state.device_lock = {}
 
-    @st.cache_data(ttl=60)
-    def load_siswa():
-        return pd.read_sql("SELECT nisn, nama, kelas FROM siswa", conn)
-
-    df_siswa = load_siswa()
-
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
         st.markdown("#### 🔍 Cari & Pilih Identitas Siswa")
-        st.caption("Ketik beberapa huruf nama atau NISN, lalu klik nama yang sesuai pada daftar pilihan:")
+        st.caption("Ketik beberapa huruf nama atau NISN Anda, lalu pilih nama yang muncul pada daftar pilihan di bawah:")
         
-        # 1. Kotak untuk mengetik kata kunci filter
-        search_keyword = st.text_input("Ketik untuk memfilter nama/NISN:", placeholder="Contoh: Muhammad atau 005...").strip()
+        # 1. Kotak input untuk mengetik huruf pencarian
+        search_keyword = st.text_input("Ketik Nama / NISN:", placeholder="Contoh: Ahmad atau 005...").strip()
         
-        # 2. Saring data berdasarkan ketikan atau tampilkan default awal
+        selected_nisn = None
+        
         if search_keyword:
-            df_filtered = df_siswa[
-                df_siswa['nama'].str.contains(search_keyword, case=False, na=False) | 
-                df_siswa['nisn'].astype(str).str.contains(search_keyword, case=False, na=False)
-            ]
+            # 2. Query pencarian langsung ke database berdasarkan huruf yang diketik (LIKE query)
+            query = """
+                SELECT nisn, nama, kelas 
+                FROM siswa 
+                WHERE nama LIKE ? OR nisn LIKE ?
+                LIMIT 50
+            """
+            pattern = f"%{search_keyword}%"
+            df_filtered = pd.read_sql(query, conn, params=(pattern, pattern))
+            
+            if not df_filtered.empty:
+                options_dict = {
+                    f"{row['nama']} — Kelas: {row['kelas']} (NISN: {row['nisn']})": str(row['nisn']) 
+                    for _, row in df_filtered.iterrows()
+                }
+                
+                # 3. Selectbox untuk memilih nama yang mirip sesuai hasil pencarian
+                pilihan_terpilih = st.selectbox(
+                    f"Ditemukan {len(df_filtered)} nama yang mirip. Pilih nama Anda:",
+                    options=list(options_dict.keys()),
+                    index=None,
+                    placeholder="--- Klik dan pilih nama Anda ---"
+                )
+                
+                selected_nisn = options_dict[pilihan_terpilih] if pilihan_terpilih else None
+            else:
+                st.warning("⚠️ Tidak ada siswa yang cocok dengan kata kunci tersebut. Periksa kembali ejaan nama atau NISN Anda.")
         else:
-            df_filtered = df_siswa.head(50) # Tampilkan 50 data awal agar selectbox tidak kosong
-            st.caption("💡 *Menampilkan 50 data awal. Ketik nama atau NISN di atas untuk pencarian spesifik.*")
-            
-        if not df_filtered.empty:
-            # Buat kamus pilihan untuk selectbox
-            options_dict = {
-                f"{row['nama']} — Kelas: {row['kelas']} (NISN: {row['nisn']})": str(row['nisn']) 
-                for _, row in df_filtered.iterrows()
-            }
-            
-            # 3. Kotak pilihan (selectbox) di mana pengguna bisa langsung mengklik nama yang diinginkan
-            pilihan_terpilih = st.selectbox(
-                f"Pilih nama siswa (Menampilkan {len(df_filtered)} pilihan):",
-                options=list(options_dict.keys()),
-                index=None,
-                placeholder="--- Klik dan pilih nama siswa ---"
-            )
-            
-            selected_nisn = options_dict[pilihan_terpilih] if pilihan_terpilih else None
-        else:
-            st.warning("⚠️ Tidak ada siswa yang cocok dengan kata kunci tersebut.")
-            selected_nisn = None
+            st.info("💡 **Silakan ketik beberapa huruf nama atau NISN Anda pada kotak di atas untuk mulai mencari.**")
             
         st.markdown("</div>", unsafe_allow_html=True)
 
     device_id = "user_device_browser_session"
 
     if selected_nisn:
-        matched_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn]
+        # Ambil detail data siswa yang dipilih dari database
+        df_selected_siswa = pd.read_sql("SELECT nisn, nama, kelas FROM siswa WHERE nisn = ?", conn, params=(selected_nisn,))
         
-        if not matched_row.empty:
-            user_row = matched_row.iloc[0]
+        if not df_selected_siswa.empty:
+            user_row = df_selected_siswa.iloc[0]
             nisn = str(user_row['nisn'])
             nama = user_row['nama']
             kelas = user_row['kelas']
