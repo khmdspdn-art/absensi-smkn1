@@ -7,7 +7,7 @@ from geopy.distance import geodesic
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Sistem Absensi & Geofencing SMKN 1 Lemahsugih",
-    page_icon="🏫",
+    page_icon="🎓",
     layout="wide",
 )
 
@@ -16,82 +16,90 @@ LAT_SEKOLAH = -6.877500
 LON_SEKOLAH = 108.285000
 RADIUS_MAX = 50  # dalam meter
 
-# --- CUSTOM CSS MODERN & PROFESIONAL ---
+# --- CUSTOM CSS DENGAN EFEK GRADASI PREMIUM ---
 st.markdown(
     """
     <style>
-    /* Global Styling & Background */
+    /* Global Background & Font */
     .main {
-        background-color: #f8fafc;
+        background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
         font-family: 'Inter', sans-serif;
     }
     
-    /* Header Styling */
+    /* Header dengan Gradasi Warna Elegan */
     .header-container {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1d4ed8 100%);
+        padding: 2.8rem 2rem;
+        border-radius: 18px;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .header-logo {
+        font-size: 3.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
     .header-title {
-        font-size: 2.2rem;
+        font-size: 2.3rem;
         font-weight: 800;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
         letter-spacing: -0.5px;
     }
     .header-subtitle {
         font-size: 1.1rem;
-        color: #94a3b8;
+        color: #e2e8f0;
         font-weight: 400;
+        letter-spacing: 0.5px;
     }
 
-    /* Card Box Styling */
+    /* Card Box Modern dengan Efek Bayangan Lembut */
     .custom-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 1.8rem;
+        border-radius: 14px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         border: 1px solid #e2e8f0;
         margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
     }
 
-    /* Button Styling */
+    /* Tombol Utama dengan Gradasi */
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
         font-weight: 600;
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 0.75rem 1rem;
         border: none;
-        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-        box-shadow: 0 6px 15px rgba(2, 132, 199, 0.3);
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #1d4ed8 100%, #1e40af 100%);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        transform: translateY(-2px);
     }
 
-    /* Sidebar Styling */
+    /* Sidebar dengan Nuansa Profesional */
     section[data-testid="stSidebar"] {
-        background-color: #0f172a;
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
         color: white;
     }
     section[data-testid="stSidebar"] .stRadio label {
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;
         font-weight: 500;
     }
     
-    /* Metric Card Custom */
+    /* Metrik Dashboard */
     div[data-testid="stMetric"] {
-        background-color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        background: white;
+        padding: 1.2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         border: 1px solid #e2e8f0;
     }
     </style>
@@ -110,11 +118,11 @@ conn = get_db_connection()
 
 # --- SIDEBAR NAVIGASI ---
 with st.sidebar:
-    st.markdown("<h3 style='color: white; text-align: center; padding-top: 1rem;'>🏫 MENU NAVIGASI</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white; text-align: center; padding-top: 1rem;'>🎓 NAVIGASI UTAMA</h3>", unsafe_allow_html=True)
     st.markdown("---")
     menu = st.radio("Pilih Halaman:", ["Absensi Siswa", "Monitoring Wakasek Kurikulum"])
     st.markdown("---")
-    st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.85rem;'>© 2026 SMKN 1 Lemahsugih<br>Tim IT & Kurikulum</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>SMKN 1 Lemahsugih<br>Digital Geofencing System © 2026</p>", unsafe_allow_html=True)
 
 # ==========================================
 # HALAMAN 1: ABSENSI SISWA
@@ -122,8 +130,9 @@ with st.sidebar:
 if menu == "Absensi Siswa":
     st.markdown("""
         <div class='header-container'>
-            <div class='header-title'>🏫 PORTAL ABSENSI SISWA</div>
-            <div class='header-subtitle'>SMK Negeri 1 Lemahsugih • Sistem Geofencing Terpadu</div>
+            <div class='header-logo'>🏛️</div>
+            <div class='header-title'>SMKN 1 LEMAHSUGIH</div>
+            <div class='header-subtitle'>Portal Resmi Absensi & Geofencing Siswa Berbasis Digital</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -138,14 +147,14 @@ if menu == "Absensi Siswa":
 
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-        st.markdown("#### 🔍 Identifikasi Siswa")
+        st.markdown("#### 🔍 Cari Identitas Siswa")
         options = df_siswa.apply(lambda x: f"{x['nama']} (NISN: {x['nisn']} - {x['kelas']})", axis=1)
 
         selected_option = st.selectbox(
-            "Silakan ketik nama lengkap atau NISN Anda:",
+            "Ketik nama lengkap atau NISN Anda:",
             options=options,
             index=None,
-            placeholder="Ketik nama Anda di sini..."
+            placeholder="Mulai ketik nama Anda..."
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -165,7 +174,6 @@ if menu == "Absensi Siswa":
         else:
             st.session_state.device_lock[device_id] = nisn
 
-        # Kartu Info Identitas Aktif
         st.info(f"👤 **Siswa Aktif:** {nama} &nbsp;|&nbsp; **Kelas:** {kelas} &nbsp;|&nbsp; **NISN:** {nisn}")
         
         with st.container():
@@ -184,9 +192,8 @@ if menu == "Absensi Siswa":
 
             jarak = geodesic((LAT_SEKOLAH, LON_SEKOLAH), (lat_siswa, lon_siswa)).meters
             
-            # Indikator Jarak Visual
             if jarak <= RADIUS_MAX:
-                st.success(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Dalam radius valid max {RADIUS_MAX}m)*")
+                st.success(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Valid, dalam radius max {RADIUS_MAX}m)*")
             else:
                 st.error(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Di luar radius valid max {RADIUS_MAX}m)*")
 
@@ -287,19 +294,20 @@ if menu == "Absensi Siswa":
 elif menu == "Monitoring Wakasek Kurikulum":
     st.markdown("""
         <div class='header-container'>
-            <div class='header-title'>📊 DASHBOARD MONITORING KURIKULUM</div>
-            <div class='header-subtitle'>Rekapitulasi Kehadiran Real-Time SMKN 1 Lemahsugih</div>
+            <div class='header-logo'>📊</div>
+            <div class='header-title'>DASHBOARD WAKASEK KURIKULUM</div>
+            <div class='header-subtitle'>Monitoring Kehadiran Siswa Real-Time • SMKN 1 Lemahsugih</div>
         </div>
     """, unsafe_allow_html=True)
 
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
         st.markdown("#### 🔐 Otentikasi Administrator")
-        password_input = st.text_input("Masukkan Password Akses Wakasek:", type="password", placeholder="Masukkan sandi...")
+        password_input = st.text_input("Masukkan Password Akses Wakasek:", type="password", placeholder="Masukkan kata sandi...")
         st.markdown("</div>", unsafe_allow_html=True)
     
     if password_input == "kurikulum2026": 
-        st.success("🔓 Akses Diberikan. Selamat bertugas, Wakasek Kurikulum.")
+        st.success("🔓 Akses Berhasil. Selamat bertugas, Wakasek Kurikulum.")
         st.markdown("---")
 
         query_rekap = """
