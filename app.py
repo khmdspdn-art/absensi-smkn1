@@ -31,14 +31,14 @@ img_base64 = get_img_as_base64("logo.png")
 
 # --- CUSTOM CSS DENGAN EFEK GRADASI & STYLE GAMBAR LOGO ---
 st.markdown(
-    f"""
+    """
     <style>
-    .main {{
+    .main {
         background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
         font-family: 'Inter', sans-serif;
     }
     
-    .header-container {{
+    .header-container {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1d4ed8 100%);
         padding: 2.5rem 2rem;
         border-radius: 18px;
@@ -49,7 +49,7 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    .school-logo {{
+    .school-logo {
         width: 100px;
         height: 100px;
         object-fit: contain;
@@ -57,21 +57,21 @@ st.markdown(
         filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
     }
 
-    .header-title {{
+    .header-title {
         font-size: 2.2rem;
         font-weight: 800;
         margin-bottom: 0.4rem;
         letter-spacing: -0.5px;
     }
     
-    .header-subtitle {{
+    .header-subtitle {
         font-size: 1.1rem;
         color: #e2e8f0;
         font-weight: 400;
         letter-spacing: 0.5px;
     }
 
-    .custom-card {{
+    .custom-card {
         background: rgba(255, 255, 255, 0.95);
         padding: 1.8rem;
         border-radius: 14px;
@@ -81,7 +81,7 @@ st.markdown(
         backdrop-filter: blur(10px);
     }
 
-    .stButton>button {{
+    .stButton>button {
         width: 100%;
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
@@ -92,28 +92,28 @@ st.markdown(
         box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         transition: all 0.3s ease;
     }
-    .stButton>button:hover {{
+    .stButton>button:hover {
         background: linear-gradient(135deg, #1d4ed8 100%, #1e40af 100%);
         box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         transform: translateY(-2px);
     }
 
-    section[data-testid="stSidebar"] {{
+    section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
         color: white;
     }
-    section[data-testid="stSidebar"] .stRadio label {{
+    section[data-testid="stSidebar"] .stRadio label {
         color: #f1f5f9 !important;
         font-weight: 500;
-    }}
+    }
     
-    div[data-testid="stMetric"] {{
+    div[data-testid="stMetric"] {
         background: white;
         padding: 1.2rem;
         border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         border: 1px solid #e2e8f0;
-    }}
+    }
     </style>
 """,
     unsafe_allow_html=True,
