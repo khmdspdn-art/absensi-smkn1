@@ -163,161 +163,168 @@ if menu == "Absensi Siswa":
     with st.container():
         st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
         st.markdown("#### 🔍 Cari Identitas Siswa")
-        st.caption("Ketik Nama atau NISN pada kolom di bawah untuk mencari:")
+        st.caption("Ketik huruf atau nama/NISN. Daftar di bawah akan otomatis menyusut semakin spesifik:")
         
-        # Menggunakan text_input agar bisa diketik bebas oleh pengguna
-        keyword = st.text_input("Masukkan Nama atau NISN:", placeholder="Contoh: Ahmad atau 005...").strip()
+        # Kolom input teks untuk pencarian real-time
+        keyword = st.text_input("Ketik Nama atau NISN:", placeholder="Contoh: Ah atau 005...").strip()
         
         selected_nisn = None
         if keyword:
-            # Filter data berdasarkan nama atau NISN yang diketik
+            # Filter data secara dinamis berdasarkan huruf yang diketik
             df_filtered = df_siswa[
                 df_siswa['nama'].str.contains(keyword, case=False, na=False) | 
                 df_siswa['nisn'].astype(str).str.contains(keyword, case=False, na=False)
             ]
             
-            if len(df_filtered) == 1:
-                # Jika hasil pencarian hanya 1, otomatis dipilih
-                user_row = df_filtered.iloc[0]
-                selected_nisn = str(user_row['nisn'])
-                st.success(f"Siswa ditemukan: **{user_row['nama']}** (Kelas: {user_row['kelas']})")
-            elif len(df_filtered) > 1:
-                # Jika ada beberapa nama yang mirip, tampilkan pilihan spesifik
-                st.info(f"Ditemukan {len(df_filtered)} siswa dengan kata kunci tersebut. Silakan pilih di bawah:")
-                options_map = {f"{row['nama']} — NISN: {row['nisn']} — Kelas: {row['kelas']}": str(row['nisn']) for _, row in df_filtered.iterrows()}
-                pilihan_nama = st.selectbox("Pilih Nama Siswa:", options=list(options_map.keys()), index=None)
-                if pilihan_nama:
-                    selected_nisn = options_map[pilihan_nama]
+            if not df_filtered.empty:
+                st.info(f"Ditemukan {len(df_filtered)} siswa yang cocok. Silakan salin NISN atau pilih dari daftar:")
+                
+                # Menampilkan tabel hasil saringan secara interaktif
+                st.dataframe(
+                    df_filtered.rename(columns={"nisn": "NISN", "nama": "Nama Lengkap", "kelas": "Kelas"}),
+                    hide_index=True,
+                    use_container_width=True
+                )
+                
+                # Input lanjutan untuk memasukkan NISN yang spesifik dari hasil saringan
+                selected_nisn = st.text_input("Masukkan NISN secara lengkap dari tabel di atas untuk melanjutkan:", placeholder="Ketik NISN di sini...")
+                selected_nisn = selected_nisn.strip()
             else:
-                st.warning("⚠️ Siswa dengan nama atau NISN tersebut tidak ditemukan.")
+                st.warning("⚠️ Tidak ada siswa yang cocok dengan kata kunci tersebut.")
         st.markdown("</div>", unsafe_allow_html=True)
 
     device_id = "user_device_browser_session"
 
     if selected_nisn:
-        user_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn].iloc[0]
-        nisn = str(user_row['nisn'])
-        nama = user_row['nama']
-        kelas = user_row['kelas']
-
-        if device_id in st.session_state.device_lock:
-            if st.session_state.device_lock[device_id] != nisn:
-                st.error("⚠️ Perangkat ini terkunci untuk akun siswa lain! (Kebijakan 1 HP 1 Akun Aktif)")
-                st.stop()
-        else:
-            st.session_state.device_lock[device_id] = nisn
-
-        st.info(f"👤 **Siswa Aktif:** {nama} &nbsp;|&nbsp; **Kelas:** {kelas} &nbsp;|&nbsp; **NISN:** {nisn}")
+        # Cek apakah NISN yang dimasukkan valid ada di database
+        matched_row = df_siswa[df_siswa['nisn'].astype(str) == selected_nisn]
         
-        with st.container():
-            st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-            st.markdown("#### 📍 Verifikasi Lokasi & Waktu Server")
-            
-            use_gps_simulation = st.checkbox("Gunakan Simulasi Koordinat (Mode Pengujian)", value=True)
-            if use_gps_simulation:
-                col_lat, col_lon = st.columns(2)
-                with col_lat:
-                    lat_siswa = st.number_input("Latitude", value=LAT_SEKOLAH, format="%.6f")
-                with col_lon:
-                    lon_siswa = st.number_input("Longitude", value=LON_SEKOLAH, format="%.6f")
+        if not matched_row.empty:
+            user_row = matched_row.iloc[0]
+            nisn = str(user_row['nisn'])
+            nama = user_row['nama']
+            kelas = user_row['kelas']
+
+            if device_id in st.session_state.device_lock:
+                if st.session_state.device_lock[device_id] != nisn:
+                    st.error("⚠️ Perangkat ini terkunci untuk akun siswa lain! (Kebijakan 1 HP 1 Akun Aktif)")
+                    st.stop()
             else:
-                lat_siswa, lon_siswa = LAT_SEKOLAH, LON_SEKOLAH
+                st.session_state.device_lock[device_id] = nisn
 
-            jarak = geodesic((LAT_SEKOLAH, LON_SEKOLAH), (lat_siswa, lon_siswa)).meters
+            st.info(f"👤 **Siswa Aktif:** {nama} &nbsp;|&nbsp; **Kelas:** {kelas} &nbsp;|&nbsp; **NISN:** {nisn}")
             
-            if jarak <= RADIUS_MAX:
-                st.success(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Valid, dalam radius max {RADIUS_MAX}m)*")
-            else:
-                st.error(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Di luar radius valid max {RADIUS_MAX}m)*")
+            with st.container():
+                st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
+                st.markdown("#### 📍 Verifikasi Lokasi & Waktu Server")
+                
+                use_gps_simulation = st.checkbox("Gunakan Simulasi Koordinat (Mode Pengujian)", value=True)
+                if use_gps_simulation:
+                    col_lat, col_lon = st.columns(2)
+                    with col_lat:
+                        lat_siswa = st.number_input("Latitude", value=LAT_SEKOLAH, format="%.6f")
+                    with col_lon:
+                        lon_siswa = st.number_input("Longitude", value=LON_SEKOLAH, format="%.6f")
+                else:
+                    lat_siswa, lon_siswa = LAT_SEKOLAH, LON_SEKOLAH
 
-            waktu_sekarang = datetime.now().time()
-            tanggal_hari_ini = datetime.now().strftime("%Y-%m-%d")
-            st.caption(f"⏰ Waktu Server: **{datetime.now().strftime('%H:%M:%S')} WIB** | Tanggal: {tanggal_hari_ini}")
-            st.markdown("</div>", unsafe_allow_html=True)
+                jarak = geodesic((LAT_SEKOLAH, LON_SEKOLAH), (lat_siswa, lon_siswa)).meters
+                
+                if jarak <= RADIUS_MAX:
+                    st.success(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Valid, dalam radius max {RADIUS_MAX}m)*")
+                else:
+                    st.error(f"📏 Jarak Anda: **{jarak:.2f} meter** dari titik sekolah. *(Di luar radius valid max {RADIUS_MAX}m)*")
 
-        cursor = conn.cursor()
-        cursor.execute("SELECT jam_masuk, status_masuk, jam_pulang, status_pulang FROM absensi WHERE nisn = ? AND tanggal = ?", (nisn, tanggal_hari_ini))
-        existing_data = cursor.fetchone()
+                waktu_sekarang = datetime.now().time()
+                tanggal_hari_ini = datetime.now().strftime("%Y-%m-%d")
+                st.caption(f"⏰ Waktu Server: **{datetime.now().strftime('%H:%M:%S')} WIB** | Tanggal: {tanggal_hari_ini}")
+                st.markdown("</div>", unsafe_allow_html=True)
 
-        col_masuk, col_pulang = st.columns(2)
+            cursor = conn.cursor()
+            cursor.execute("SELECT jam_masuk, status_masuk, jam_pulang, status_pulang FROM absensi WHERE nisn = ? AND tanggal = ?", (nisn, tanggal_hari_ini))
+            existing_data = cursor.fetchone()
 
-        with col_masuk:
-            st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-            st.markdown("#### 📥 Absen Masuk")
-            st.caption("Pukul 06.30 - 07.30 WIB")
-            
-            if existing_data and existing_data[0]:
-                st.success(f"✅ Sudah Absen Masuk\n\n**Jam:** {existing_data[0]}\n**Status:** {existing_data[1]}")
-            else:
-                if st.button("Kirim Absen Masuk", key=f"btn_masuk_{nisn}"):
-                    if jarak > RADIUS_MAX:
-                        st.error(f"❌ Gagal! Anda berada di luar radius sekolah ({jarak:.2f}m).")
-                    else:
-                        jam_awal = datetime.strptime("06:30:00", "%H:%M:%S").time()
-                        jam_akhir = datetime.strptime("07:30:00", "%H:%M:%S").time()
-                        
-                        if waktu_sekarang < jam_awal:
-                            st.warning("⏳ Belum waktunya melakukan absen masuk.")
-                        elif waktu_sekarang <= jam_akhir:
-                            status_m = "TEPAT WAKTU"
-                            jam_str = datetime.now().strftime("%H:%M:%S")
-                            cursor.execute("""
-                                INSERT INTO absensi (nisn, tanggal, jam_masuk, status_masuk) 
-                                VALUES (?, ?, ?, ?)
-                                ON CONFLICT(nisn, tanggal) DO UPDATE SET jam_masuk=?, status_masuk=?
-                            """, (nisn, tanggal_hari_ini, jam_str, status_m, jam_str, status_m))
-                            conn.commit()
-                            st.success("✅ Berhasil: TEPAT WAKTU!")
-                            st.rerun()
+            col_masuk, col_pulang = st.columns(2)
+
+            with col_masuk:
+                st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
+                st.markdown("#### 📥 Absen Masuk")
+                st.caption("Pukul 06.30 - 07.30 WIB")
+                
+                if existing_data and existing_data[0]:
+                    st.success(f"✅ Sudah Absen Masuk\n\n**Jam:** {existing_data[0]}\n**Status:** {existing_data[1]}")
+                else:
+                    if st.button("Kirim Absen Masuk", key=f"btn_masuk_{nisn}"):
+                        if jarak > RADIUS_MAX:
+                            st.error(f"❌ Gagal! Anda berada di luar radius sekolah ({jarak:.2f}m).")
                         else:
-                            status_m = "TERLAMBAT"
-                            jam_str = datetime.now().strftime("%H:%M:%S")
-                            cursor.execute("""
-                                INSERT INTO absensi (nisn, tanggal, jam_masuk, status_masuk) 
-                                VALUES (?, ?, ?, ?)
-                                ON CONFLICT(nisn, tanggal) DO UPDATE SET jam_masuk=?, status_masuk=?
-                            """, (nisn, tanggal_hari_ini, jam_str, status_m, jam_str, status_m))
-                            conn.commit()
-                            st.warning("⚠️ Tercatat Terlambat (lewat 07.30 WIB).")
-                            st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+                            jam_awal = datetime.strptime("06:30:00", "%H:%M:%S").time()
+                            jam_akhir = datetime.strptime("07:30:00", "%H:%M:%S").time()
+                            
+                            if waktu_sekarang < jam_awal:
+                                st.warning("⏳ Belum waktunya melakukan absen masuk.")
+                            elif waktu_sekarang <= jam_akhir:
+                                status_m = "TEPAT WAKTU"
+                                jam_str = datetime.now().strftime("%H:%M:%S")
+                                cursor.execute("""
+                                    INSERT INTO absensi (nisn, tanggal, jam_masuk, status_masuk) 
+                                    VALUES (?, ?, ?, ?)
+                                    ON CONFLICT(nisn, tanggal) DO UPDATE SET jam_masuk=?, status_masuk=?
+                                """, (nisn, tanggal_hari_ini, jam_str, status_m, jam_str, status_m))
+                                conn.commit()
+                                st.success("✅ Berhasil: TEPAT WAKTU!")
+                                st.rerun()
+                            else:
+                                status_m = "TERLAMBAT"
+                                jam_str = datetime.now().strftime("%H:%M:%S")
+                                cursor.execute("""
+                                    INSERT INTO absensi (nisn, tanggal, jam_masuk, status_masuk) 
+                                    VALUES (?, ?, ?, ?)
+                                    ON CONFLICT(nisn, tanggal) DO UPDATE SET jam_masuk=?, status_masuk=?
+                                """, (nisn, tanggal_hari_ini, jam_str, status_m, jam_str, status_m))
+                                conn.commit()
+                                st.warning("⚠️ Tercatat Terlambat (lewat 07.30 WIB).")
+                                st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
-        with col_pulang:
-            st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-            st.markdown("#### 📤 Absen Pulang")
-            st.caption("Pukul 14.30 - 15.15 WIB")
-            
-            if existing_data and existing_data[2]:
-                st.success(f"✅ Sudah Absen Pulang\n\n**Jam:** {existing_data[2]}\n**Status:** {existing_data[3]}")
-            else:
-                if st.button("Kirim Absen Pulang", key=f"btn_pulang_{nisn}"):
-                    if jarak > RADIUS_MAX:
-                        st.error(f"❌ Gagal! Anda berada di luar radius sekolah ({jarak:.2f}m).")
-                    else:
-                        jam_p_awal = datetime.strptime("14:30:00", "%H:%M:%S").time()
-                        jam_p_akhir = datetime.strptime("15:15:00", "%H:%M:%S").time()
-                        
-                        if waktu_sekarang < jam_p_awal:
-                            st.warning("⏳ Belum waktunya jam pulang sekolah.")
-                        elif waktu_sekarang <= jam_p_akhir:
-                            status_p = "PULANG"
-                            jam_str = datetime.now().strftime("%H:%M:%S")
-                            cursor.execute("""
-                                UPDATE absensi SET jam_pulang=?, status_pulang=? WHERE nisn=? AND tanggal=?
-                            """, (jam_str, status_p, nisn, tanggal_hari_ini))
-                            conn.commit()
-                            st.success("✅ Berhasil Absen Pulang!")
-                            st.rerun()
+            with col_pulang:
+                st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
+                st.markdown("#### 📤 Absen Pulang")
+                st.caption("Pukul 14.30 - 15.15 WIB")
+                
+                if existing_data and existing_data[2]:
+                    st.success(f"✅ Sudah Absen Pulang\n\n**Jam:** {existing_data[2]}\n**Status:** {existing_data[3]}")
+                else:
+                    if st.button("Kirim Absen Pulang", key=f"btn_pulang_{nisn}"):
+                        if jarak > RADIUS_MAX:
+                            st.error(f"❌ Gagal! Anda berada di luar radius sekolah ({jarak:.2f}m).")
                         else:
-                            status_p = "MINGGAT"
-                            jam_str = datetime.now().strftime("%H:%M:%S")
-                            cursor.execute("""
-                                UPDATE absensi SET jam_pulang=?, status_pulang=? WHERE nisn=? AND tanggal=?
-                            """, (jam_str, status_p, nisn, tanggal_hari_ini))
-                            conn.commit()
-                            st.error("🚨 Melewati batas pukul 15.15 WIB! Tercatat: **MINGGAT**.")
-                            st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+                            jam_p_awal = datetime.strptime("14:30:00", "%H:%M:%S").time()
+                            jam_p_akhir = datetime.strptime("15:15:00", "%H:%M:%S").time()
+                            
+                            if waktu_sekarang < jam_p_awal:
+                                st.warning("⏳ Belum waktunya jam pulang sekolah.")
+                            elif waktu_sekarang <= jam_p_akhir:
+                                status_p = "PULANG"
+                                jam_str = datetime.now().strftime("%H:%M:%S")
+                                cursor.execute("""
+                                    UPDATE absensi SET jam_pulang=?, status_pulang=? WHERE nisn=? AND tanggal=?
+                                """, (jam_str, status_p, nisn, tanggal_hari_ini))
+                                conn.commit()
+                                st.success("✅ Berhasil Absen Pulang!")
+                                st.rerun()
+                            else:
+                                status_p = "MINGGAT"
+                                jam_str = datetime.now().strftime("%H:%M:%S")
+                                cursor.execute("""
+                                    UPDATE absensi SET jam_pulang=?, status_pulang=? WHERE nisn=? AND tanggal=?
+                                """, (jam_str, status_p, nisn, tanggal_hari_ini))
+                                conn.commit()
+                                st.error("🚨 Melewati batas pukul 15.15 WIB! Tercatat: **MINGGAT**.")
+                                st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+        elif selected_nisn != "":
+            st.error("⚠️ NISN yang dimasukkan tidak valid atau tidak ditemukan dari daftar di atas.")
 
 # ==========================================
 # HALAMAN 2: MONITORING WAKASEK KURIKULUM
