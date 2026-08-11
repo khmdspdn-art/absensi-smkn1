@@ -180,7 +180,7 @@ if menu == "Absensi Siswa":
                 # Jika hasil pencarian hanya 1, otomatis dipilih
                 user_row = df_filtered.iloc[0]
                 selected_nisn = str(user_row['nisn'])
-                st.success( ditemukan: **{user_row['nama']}** (Kelas: {user_row['kelas']})")
+                st.success(f"Siswa ditemukan: **{user_row['nama']}** (Kelas: {user_row['kelas']})")
             elif len(df_filtered) > 1:
                 # Jika ada beberapa nama yang mirip, tampilkan pilihan spesifik
                 st.info(f"Ditemukan {len(df_filtered)} siswa dengan kata kunci tersebut. Silakan pilih di bawah:")
